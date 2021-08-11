@@ -1,5 +1,3 @@
-// removido o salto que ele dava pra frente pra dar 90 graus
-
 string ultimoVerde = "";
 string statusVerde = "";
 string lastAction = "right";
@@ -21,7 +19,7 @@ float basespeed = 150; //150
 float initialBasespeed = 0;
 float valInclinacao = bc.Inclination();
 int i = 0;
-int c = 0;
+float c = 0;
 float valDirecao = bc.Compass();
 float tempoInicial = bc.Millis();
 float tempoAtual = bc.Millis();
@@ -813,78 +811,100 @@ void RescueProcess() {
     abaixarGarra();
 
     // diagonal da arena
-    D = (float)(ladoArena*(Math.Pow(2, 1/2))*1.2); // * 1.2 pra ter mais precisão 
+    Diagonal = (float)(ladoArena*(Math.Pow(2, 1/2))*1.2); // * 1.2 pra ter mais precisão 
     y = ladoArena/3; //nao pode apagar
 
     buscarCaixa();
     stop();
 
+    ///////////////////////////////
+    basespeed = 300;
     bc.ClearConsole();
-    bc.PrintConsole(0, "iniciando procura das vitimas pelo meio");
+    bc.PrintConsole(0, "iniciando procura das vitimas");
+    //////// PARTE PRINCIPAL
+    /////////////////////////////////////////////////////
+    
+    float initial_direction = (float)Math.Truncate(bc.Compass());
+    bool rescued_all_victims = false;
+    float rescued_victims = 0;
+    float ultraR;
+    float ultraU;
+    float ultraD;
 
-    //# vendo da perspectiva que a caixa está na direita
-    //#######################################################
-    //# CIMA
-    bc.PrintConsole(1, "estagio 1");
+    while (!rescued_all_victims) {
+        // vai ate o centro de ré
+        bc.MoveFrontalRotations(-300, 57);
+        stop();
+        ultraR = bc.Distance(ultraDireita);
+        ultraU = bc.Distance(ultraFrenteCima);
+        ultraD = bc.Distance(ultraFrenteBaixo);
 
-    // vai ate o centro de ré
-    percorrerDistancia((float)-((ladoArena/2)*1.1));
-    bc.MoveFrontalAngles(500, -45);
-    alinharNaDirecaoAtual();
-    if (bc.Distance(ultraFrenteBaixo)<31) {evitarChoque();}
-    abaixarGarra();
-    varrerLado();
-    alinharNaDirecaoAtual();
-    bc.MoveFrontalAngles(500, 45);
-    GoCaixa();
-    soltarVitimas();    
+        // vai girando até achar uma bolinha
+        bc.ClearConsole();
+        z = 0;
+        int spin_limit = 100;
+        for (i=0; i<=spin_limit; i++) {
+            bc.PrintConsole(1, i.ToString());
+            z = i;
+            ultraR = bc.Distance(ultraDireita);
+            ultraU = bc.Distance(ultraFrenteCima);
+            ultraD = bc.Distance(ultraFrenteBaixo);
 
-    //#######################################################
-    //# DIREITA
-    bc.PrintConsole(1, "estagio 2");
+            // ultra da direita identificou bolinha
+            if (ultraR<119) {
+                bc.PrintConsole(0, "achou bolinha");
 
-    // vai ate o centro de ré
-    percorrerDistancia((float)-((ladoArena/2)*1.1));
-    bc.MoveFrontalAngles(500, 45);
-    alinharNaDirecaoAtual();
-    if (bc.Distance(ultraFrenteBaixo)<31) {evitarChoque();}
-    abaixarGarra();
-    varrerLado();
-    alinharNaDirecaoAtual();
-    bc.MoveFrontalAngles(500, -45);
-    GoCaixa();
-    soltarVitimas();
+                // gira pra ficar de frente com a bolinha
+                bc.MoveFrontalAngles(500, 92);
 
-    //#######################################################
-    //# BAIXO
-    bc.PrintConsole(1, "estagio 3");
+                if (bc.Distance(ultraFrenteBaixo) <= 32) { evitarChoque(); }
 
-    // vai ate o centro de ré
-    percorrerDistancia((float)-((ladoArena/2)*1.1));
-    bc.MoveFrontalAngles(500, 135);
-    alinharNaDirecaoAtual();
-    if (bc.Distance(ultraFrenteBaixo)<31) {evitarChoque();}
-    abaixarGarra();
-    varrerLado();
-    alinharNaDirecaoAtual();
-    bc.MoveFrontalAngles(500, -135);
-    GoCaixa();
-    soltarVitimas();
+                abaixarGarra();
+                
+                // enquanto vitima nao estiver na garra
+                c = 0;
+                bc.ResetTimer();
+                while (!bc.HasVictim() && bc.Timer()<7000 && bc.Distance(ultraFrenteCima)>32) {
+                    bc.MoveFrontalRotations(300, (float)0.5);
+                    c += (float)0.5;
+                }
+                stop();
 
-    //#######################################################
-    //# ESQUERDA
-    bc.PrintConsole(1, "estagio 4");
+                //captura a vitima -> vai pra frente e levanta o atuador
+                bc.MoveFrontalRotations(300, 6);
+                stop();
+                levantarGarra();
 
-    // vai ate o centro de ré
-    percorrerDistancia((float)-((ladoArena/2)*1.1));
-    bc.MoveFrontalAngles(500, -135);
-    alinharNaDirecaoAtual();
-    if (bc.Distance(ultraFrenteBaixo)<31) {evitarChoque();}
-    abaixarGarra();
-    varrerLado();
-    bc.MoveFrontalAngles(500, 135);
-    GoCaixa();
-    soltarVitimas();
+                // volta
+                bc.MoveFrontalRotations(-300, c+6);
+                stop();
+
+                // volta pra direcao inicial, da caixa.
+                while (Math.Truncate(bc.Compass())!=initial_direction) {
+                    bc.MoveFrontalAngles(300, -(float)0.4);
+                }
+                bc.MoveFrontalAngles(500, -1);
+                stop();
+
+                GoCaixa();
+                soltarVitimas();
+                rescued_victims += 1;
+                break;
+            }
+            bc.MoveFrontalAngles(500, 1);
+        } // fim do for
+
+       
+        if (z==spin_limit) { // deu o giro e não encontrou vitimas
+            rescued_all_victims = true;
+        }
+        //bc.MoveFrontalRotations(500, 1);
+    }
+    // volta pra direcao inicial, da caixa.
+    while (Math.Truncate(bc.Compass())!=initial_direction) {
+        bc.MoveFrontalAngles(300, (float)0.1);
+    }
+    ////////////////////////////
 
     bc.ClearConsole();
     //# VARRER AO REDOR DA CAIXA
@@ -934,47 +954,6 @@ void RescueProcess() {
     percorrerDistancia(50);
     soltarVitimas();
     stop();
-
-    /*
-    if (direcaoCaixa=="up left" && direcaoSaida=="right") {
-        // vai ate o centro de ré
-        percorrerDistancia((float)-((ladoArena/2)*1.1));
-        bc.MoveFrontalAngles(500, -45);
-        alinharNaDirecaoAtual();
-        while (!bc.Touch(1)) {bc.MoveFrontal(-basespeed, -basespeed);}
-        stop();
-        alinharNaDirecaoAtual();
-        percorrerDistancia((float)(ladoArena*0.20));
-        bc.MoveFrontalAngles(500, 90);
-        alinharNaDirecaoAtual();
-        varrerLado();
-        bc.MoveFrontalAngles(500, -90);
-        alinharNaDirecaoAtual();
-        percorrerDistancia((float)(ladoArena*0.40));
-        bc.MoveFrontalAngles(500, 45);
-        GoCaixa();
-        soltarVitimas();
-
-        // #outro lado
-        // vai ate o centro de ré
-        percorrerDistancia((float)-((ladoArena/2)*1.1));
-        bc.MoveFrontalAngles(500, -45);
-        alinharNaDirecaoAtual();
-        while (!bc.Touch(1)) {bc.MoveFrontal(-basespeed, -basespeed);}
-        stop();
-        alinharNaDirecaoAtual();
-        percorrerDistancia((float)(ladoArena*0.20));
-        bc.MoveFrontalAngles(500, -90);
-        alinharNaDirecaoAtual();
-        varrerLado();
-        bc.MoveFrontalAngles(500, 90);
-        alinharNaDirecaoAtual();
-        percorrerDistancia((float)(ladoArena*0.40));
-        bc.MoveFrontalAngles(500, 45);
-        GoCaixa();
-        soltarVitimas();
-    }
-    */
 
 }
 
@@ -1089,11 +1068,11 @@ void buscarCaixa() {
             levantarGarra();
 
             // volta até a posicao inicial da arena
-            while (bc.Distance(ultraFrenteCima)<220) { bc.MoveFrontal(-basespeed, -basespeed); }
+            while (bc.Distance(ultraFrenteCima)<200) { bc.MoveFrontal(-basespeed, -basespeed); }
             stop();
 
             alinharNaDirecaoAtual();
-            bc.MoveFrontalAngles(500, 43);
+            bc.MoveFrontalAngles(500, 45);
             if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
 
             abaixarGarra();
