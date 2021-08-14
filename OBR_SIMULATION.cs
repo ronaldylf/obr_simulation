@@ -1,4 +1,4 @@
-// area de resgate da D4RKMODE
+// area de resgate super otimizada
 
 string ultimoVerde = "";
 string statusVerde = "";
