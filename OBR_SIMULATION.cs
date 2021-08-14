@@ -1,3 +1,5 @@
+// area de resgate da D4RKMODE
+
 string ultimoVerde = "";
 string statusVerde = "";
 string lastAction = "right";
@@ -30,7 +32,7 @@ int anguloCaixaEsquerda = -1;
 float comprimentoDoCarro = 0;
 float ladoArena = 97;
 int saidaResgate = -1;
-int update_time = 70; // taxa de atualização dos sensores (tem que ser int)
+int update_time = 75; // taxa de atualização dos sensores (tem que ser int)
 float constante = 10;
 
 float Diagonal = 0;
@@ -151,10 +153,18 @@ void soltarVitimas() {
     bc.ActuatorSpeed(150);
     baixarAtuador();
     girarcimaBalde();
+
+    
     bc.OpenActuator();
     bc.Wait(500);
     bc.CloseActuator();
     bc.Wait(500);
+
+    /*
+    bc.OpenActuator();
+    while (bc.HasVictim()) {}
+    bc.CloseActuator();
+    */
 
     // levantar garra denovo
     bc.ActuatorSpeed(150);
@@ -297,7 +307,7 @@ void calcularErro() {
     valInclinacao = bc.Inclination();
     valInclinacao = (float)Math.Truncate(valInclinacao);
     //estaRampa = valInclinacao>5 && valInclinacao<356;
-    estaRampa = valInclinacao>21 && valInclinacao<356;
+    estaRampa = valInclinacao>21 && valInclinacao<350;
 
     //bc.PrintConsole(1, status);
 }
@@ -568,6 +578,7 @@ void MainProcess() {
         if ((error>0 && lastError<0) || (error<0 && lastError>0)) {
             bc.MoveFrontalRotations(300, 1);
         }
+        lastError = error;
         calcularErro();
     }
     lastError = error;
@@ -637,7 +648,9 @@ void MainProcess() {
     bool temObstaculo = desviarObstaculo();
     if (temObstaculo) {return;}
 
-    if (estaRampa && bc.Distance(ultraFrenteBaixo)>30) {
+    //if (estaRampa && bc.Distance(ultraFrenteBaixo)>30) {
+    if (estaRampa) {
+        basespeed = 100;
         calcularDirecaoAtual();
         bc.PrintConsole(0, "esta em uma rampa a " + direcaoAtual);
         bc.MoveFrontal(basespeed, basespeed);
@@ -645,7 +658,8 @@ void MainProcess() {
         percorrerDistancia(12);
         alinharNaDirecaoAtual();
 
-        while (estaRampa && bc.Distance(ultraFrenteBaixo)>30) {
+        //while (estaRampa && bc.Distance(ultraFrenteBaixo)>30) {
+        while (estaRampa) {
             bc.Wait(update_time);
             rampaResgate = bc.Distance(ultraDireita)<=38 || rampaResgate;
             if (rampaResgate) {bc.PrintConsole(0, "ENTRANDO NA RAMPA DE RESGATE");}
@@ -755,31 +769,185 @@ void MainProcess() {
     }
 }
 
+void buscarCaixa() {
+    alinharNaDirecaoAtual();
+    // falta programar:
+    // direcaoSaida=="left"
+    // direcaoSaida=="up"
+    
+
+    if (direcaoSaida=="right") {
+        bc.MoveFrontalRotations(300, 72);
+        stop();
+        levantarGarra();
+
+        
+        bc.MoveFrontalRotations(300, 15);
+        stop();
+
+        bc.Wait(20);
+        if (bc.Distance(ultraFrenteBaixo)<12) {
+            direcaoCaixa = "up_left";
+            bc.ClearConsole();
+            bc.PrintConsole(0, "achou caixa: "+direcaoCaixa);
+
+            // vai alinhar e ficar de frente pra caixa
+            bc.MoveFrontalAngles(1000, 5);
+            goToNextDivisible(45, "right");
+
+            bc.MoveFrontalRotations(300, 14);
+
+            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+        } else {
+            direcaoCaixa = "up_right";
+            bc.ClearConsole();
+            bc.PrintConsole(0, "achou caixa: "+direcaoCaixa);
+
+            encostarNaParede();
+
+
+            bc.MoveFrontalAngles(1000, 90);
+            alinharNaDirecaoAtual();
+
+            
+            while (bc.Distance(ultraFrenteCima)>92) {
+                bc.MoveFrontal(basespeed, basespeed);
+            }
+            stop();
+
+            // vai alinhar e ficar de frente pra caixa
+            bc.MoveFrontalAngles(1000, 5);
+            goToNextDivisible(45, "right");
+
+            bc.MoveFrontalRotations(300, 28);
+
+            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+        }
+        return;
+    }
+
+    if (direcaoSaida=="left") {
+        alinharNaDirecaoAtual();
+        
+        while (bc.Distance(ultraFrenteCima)>128) { bc.MoveFrontal(basespeed, basespeed); }
+        stop();
+
+        levantarGarra();
+        bc.MoveFrontalRotations(300, 15);
+        stop();
+
+        bc.Wait(20);
+        if (bc.Distance(ultraFrenteBaixo)<12) {
+            direcaoCaixa = "down_right";
+            bc.ClearConsole();
+            bc.PrintConsole(0, "achou caixa: "+direcaoCaixa);
+
+            // vai alinhar e ficar de frente pra caixa
+            bc.MoveFrontalAngles(1000, -5);
+            goToNextDivisible(45, "left");
+
+            bc.MoveFrontalRotations(300, 33);
+
+            bc.MoveFrontalAngles(1000, 89); // 90 graus fica um pouquinho torto
+        } else {
+            direcaoCaixa = "up_right";
+            bc.ClearConsole();
+            bc.PrintConsole(0, "achou caixa: "+direcaoCaixa);
+
+            encostarNaParede();
+
+            bc.MoveFrontalAngles(1000, -90);
+            alinharNaDirecaoAtual();
+
+            while (bc.Distance(ultraFrenteCima)>92) { bc.MoveFrontal(basespeed, basespeed); }
+            stop();
+
+            // vai alinhar e ficar de frente pra caixa
+            bc.MoveFrontalAngles(1000, -5);
+            goToNextDivisible(45, "left");
+
+            bc.MoveFrontalRotations(300, 28);
+
+            bc.MoveFrontalAngles(1000, 89); // 90 graus fica um pouquinho torto
+        }
+        return;
+    }
+
+    if (direcaoSaida=="up") {
+        bc.MoveFrontalRotations(300, 72);
+        stop();
+        levantarGarra();
+
+        bc.MoveFrontalRotations(300, 15);
+        stop();
+
+        bc.Wait(20);
+        if (bc.Distance(ultraFrenteBaixo)<12) {
+            direcaoCaixa = "up_left";
+            bc.ClearConsole();
+            bc.PrintConsole(0, "achou caixa: "+direcaoCaixa);
+
+            // vai alinhar e ficar de frente pra caixa
+            bc.MoveFrontalAngles(1000, 5);
+            goToNextDivisible(45, "right");
+
+            bc.MoveFrontalRotations(300, 16);
+
+            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+        } else {
+            direcaoCaixa = "down_right";
+            bc.ClearConsole();
+            bc.PrintConsole(0, "achou caixa: "+direcaoCaixa);
+            encostarNaParede();
+
+            bc.MoveFrontalAngles(1000, 90);
+            alinharNaDirecaoAtual();
+            
+            encostarNaParede();
+
+            bc.MoveFrontalAngles(1000, 90);
+            alinharNaDirecaoAtual();
+            
+            while (bc.Distance(ultraFrenteCima)>92) {
+                bc.MoveFrontal(basespeed, basespeed);
+            }
+            stop();
+
+            // vai alinhar e ficar de frente pra caixa
+            bc.MoveFrontalAngles(1000, 5);
+            goToNextDivisible(45, "right");
+
+            bc.MoveFrontalRotations(300, 28);
+
+            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+        }
+        return;
+    }
+
+}
 
 void RescueProcess() {
+    // vai um pouquinho pra frente pra entrar realmente na área
     alinharNaDirecaoAtual();
+    bc.MoveFrontalRotations(300, 10);
+    stop();
 
     while (bc.Inclination()!=0) {
-        bc.MoveFrontal(300, 300);
+        bc.MoveFrontal(50, 50);
     }
 
     stop();
 
-    // usar estratégia de varredura
-    
     alinharNaDirecaoAtual();
     bc.ClearConsole();
-
-    if (bc.Distance(ultraFrenteBaixo)<31) {evitarChoque();}
 
     i = 0;
     c = 0;
     basespeed = 300;
     initialBasespeed = basespeed;
     anguloInicial = (int)Math.Truncate(bc.Compass());
-    bc.PrintConsole(1, anguloInicial.ToString());
+    bc.PrintConsole(0, "anguloInicial="+anguloInicial.ToString());
 
-    percorrerDistancia(comprimentoDoCarro/2);
 
     if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
 
@@ -787,25 +955,27 @@ void RescueProcess() {
     if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
 
     if (bc.Distance(ultraFrenteCima)==10000) {
+        if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
         saidaResgate = anguloInicial;
         direcaoSaida = "up";
         bc.MoveFrontalAngles(1000, -35);
     } else {
+        if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
         bc.MoveFrontalAngles(1000, 55);
         if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
         if (bc.Distance(ultraFrenteCima)==10000) {
             saidaResgate = anguloInicial + 90;
             direcaoSaida = "right";
+            bc.MoveFrontalAngles(1000, -90);
         } else {
             saidaResgate = anguloInicial - 90;
             direcaoSaida = "left";
         }
-        bc.MoveFrontalAngles(1000, -90);
     }
 
     if (saidaResgate>=360) {saidaResgate=saidaResgate-360;}
     if (saidaResgate<0) {saidaResgate=360-saidaResgate;}
-    bc.PrintConsole(0, "direcao da saida: " + direcaoSaida);
+    bc.PrintConsole(1, "direcao da saida=" + direcaoSaida);
     alinharNaDirecaoAtual();
 
     abaixarGarra();
@@ -814,13 +984,12 @@ void RescueProcess() {
     Diagonal = (float)(ladoArena*(Math.Pow(2, 1/2))*1.2); // * 1.2 pra ter mais precisão 
     y = ladoArena/3; //nao pode apagar
 
-    buscarCaixa();
     stop();
 
     ///////////////////////////////
     basespeed = 300;
     bc.ClearConsole();
-    bc.PrintConsole(0, "iniciando procura das vitimas");
+    bc.PrintConsole(0, "<color=\"red\">iniciando resgate das vitimas</color>");
     //////// PARTE PRINCIPAL
     /////////////////////////////////////////////////////
     
@@ -831,265 +1000,85 @@ void RescueProcess() {
     float ultraU;
     float ultraD;
 
-    while (!rescued_all_victims) {
-        // vai ate o centro de ré
-        bc.MoveFrontalRotations(-300, 57);
+    buscarCaixa();
+
+    while (bc.Distance(ultraFrenteBaixo)>1.5f) { bc.MoveFrontal(basespeed, basespeed); }
+    if (bc.HasVictim()) { soltarVitimas(); }
+
+    // usar aqui o método de resgate
+    // nesse caso vou usar algo parecido com a lógica da darkmode
+
+    int box_coordinate = (int)Math.Truncate(bc.Compass());
+    bc.PrintConsole(1, "box_coordinate="+box_coordinate.ToString());
+    
+    while (true) {
+        bc.MoveFrontalRotations(-basespeed, 55);
         stop();
-        ultraR = bc.Distance(ultraDireita);
-        ultraU = bc.Distance(ultraFrenteCima);
-        ultraD = bc.Distance(ultraFrenteBaixo);
-
-        // vai girando até achar uma bolinha
-        bc.ClearConsole();
-        z = 0;
-        int spin_limit = 100;
-        for (i=0; i<=spin_limit; i++) {
-            bc.PrintConsole(1, i.ToString());
-            z = i;
-            ultraR = bc.Distance(ultraDireita);
-            ultraU = bc.Distance(ultraFrenteCima);
-            ultraD = bc.Distance(ultraFrenteBaixo);
-
-            // ultra da direita identificou bolinha
-            if (ultraR<119) {
-                bc.PrintConsole(0, "achou bolinha");
-
-                // gira pra ficar de frente com a bolinha
-                bc.MoveFrontalAngles(500, 92);
-
-                if (bc.Distance(ultraFrenteBaixo) <= 32) { evitarChoque(); }
-
-                abaixarGarra();
-                
-                // enquanto vitima nao estiver na garra
-                c = 0;
-                bc.ResetTimer();
-                while (!bc.HasVictim() && bc.Timer()<7000 && bc.Distance(ultraFrenteCima)>32) {
-                    bc.MoveFrontalRotations(300, (float)0.5);
-                    c += (float)0.5;
-                }
-                stop();
-
-                //captura a vitima -> vai pra frente e levanta o atuador
-                bc.MoveFrontalRotations(300, 6);
-                stop();
-                levantarGarra();
-
-                // volta
-                bc.MoveFrontalRotations(-300, c+6);
-                stop();
-
-                // volta pra direcao inicial, da caixa.
-                while (Math.Truncate(bc.Compass())!=initial_direction) {
-                    bc.MoveFrontalAngles(300, -(float)0.4);
-                }
-                bc.MoveFrontalAngles(500, -1);
-                stop();
-
-                GoCaixa();
-                soltarVitimas();
-                rescued_victims += 1;
+        
+        for (int i=0; i<=225; i++) {
+            // vai girando pra direita
+            bc.MoveFrontalAngles(1000, 1);
+            // condicao: <58 ou <78 ou < 106 ou < 108
+            bool achou_bolinha = bc.Distance(ultraFrenteBaixo)<108;
+            if (achou_bolinha) {
+                if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
                 break;
             }
+        }
+
+        abaixarGarra();
+        bc.ResetTimer();
+        // vai até pegar a bolinha na garra
+        while (!bc.HasVictim()) { bc.MoveFrontal(basespeed, basespeed); }
+        int back_time = bc.Timer();
+        stop();
+        levantarGarra();
+
+        // volta pro centro
+        bc.MoveFrontal(-basespeed, -basespeed);
+        bc.Wait(back_time);
+        stop();
+
+        // gira pra caixa denovo
+        goToDirection(box_coordinate, "left");
+        
+        //if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
+        //abaixarGarra();
+
+        // encosta na caixa
+        while (bc.Distance(ultraFrenteBaixo)>2) { bc.MoveFrontal(basespeed, basespeed); }
+        stop();
+
+        if (bc.HasVictim()) { soltarVitimas(); rescued_victims += 1;}
+    }
+}
+
+void goToNextDivisible(int divider, string action) {
+    while (true) {
+        if (action=="left") {
+            bc.MoveFrontalAngles(500, -1);
+        } else {
             bc.MoveFrontalAngles(500, 1);
-        } // fim do for
-
-       
-        if (z==spin_limit) { // deu o giro e não encontrou vitimas
-            rescued_all_victims = true;
         }
-        //bc.MoveFrontalRotations(500, 1);
+        
+        c = (int)Math.Truncate(bc.Compass())%divider;
+        if ((c>=(divider-2) && c<=(divider-1)) || c==0) {break;}
     }
-    // volta pra direcao inicial, da caixa.
-    while (Math.Truncate(bc.Compass())!=initial_direction) {
-        bc.MoveFrontalAngles(300, (float)0.1);
-    }
-    ////////////////////////////
-
-    bc.ClearConsole();
-    //# VARRER AO REDOR DA CAIXA
-    //###################################
-    // # VARRER LADO DIREITO
-    bc.PrintConsole(0, "varrendo direita da caixa");
-    percorrerDistancia(-40);
-    bc.MoveFrontalAngles(500, 45);
-    alinharNaDirecaoAtual();
-    evitarChoque();
-    abaixarGarra();
-    float distancia = 0;
-    bc.ResetTimer();
-    while (bc.Distance(ultraFrenteCima)>31) {
-        bc.MoveFrontal(basespeed, basespeed);
-        distancia = (basespeed*bc.Timer())/10000;
-    }
-    stop();
-    levantarGarra();
-    alinharNaDirecaoAtual();
-    percorrerDistancia(-distancia);
-    alinharNaDirecaoAtual();
-    bc.MoveFrontalAngles(500, -45);
-    percorrerDistancia(50);
-    soltarVitimas();
-
-    //###################################
-    //# VARRER LADO ESQUERDO
-    bc.PrintConsole(0, "varrendo esquerda da caixa");
-    percorrerDistancia(-40);
-    bc.MoveFrontalAngles(500, -45);
-    alinharNaDirecaoAtual();
-    evitarChoque();
-    abaixarGarra();
-    distancia = 0;
-    bc.ResetTimer();
-    while (bc.Distance(ultraFrenteCima)>31) {
-        bc.MoveFrontal(basespeed, basespeed);
-        distancia = (basespeed*bc.Timer())/10000;
-    }
-    stop();
-    levantarGarra();
-    alinharNaDirecaoAtual();
-    percorrerDistancia(-distancia);
-    alinharNaDirecaoAtual();
-    bc.MoveFrontalAngles(500, 45);
-    percorrerDistancia(50);
-    soltarVitimas();
-    stop();
-
 }
 
 
-void buscarCaixa() {
-    bc.ClearConsole();
-    bc.PrintConsole(0, "buscando caixa");
-
-    if (direcaoSaida=="left") {
-        percorrerDistancia(comprimentoDoCarro/3);
-        bc.MoveFrontalAngles(500, 90);
-        percorrerDistancia(ladoArena+y);
-
-        if (bc.Distance(ultraFrenteCima)>30) {
-            direcaoCaixa = "down right";
-            bc.PrintConsole(1, "ACHOU CAIXA: down right");
-            percorrerDistancia(constante);
-            levantarGarra();
-            while (bc.Distance(ultraFrenteBaixo)>2) {bc.MoveFrontal(basespeed, basespeed);}
-            soltarVitimas();
-            return;
+void goToDirection(int coordinate, string action) {
+    while (true) {
+        if (action=="left") {
+            bc.MoveFrontalAngles(400, -0.1f);
         } else {
-            bc.PrintConsole(1, "ACHOU CAIXA: up right");
-            
-            alinharNaDirecaoAtual();
-            levantarGarra();
-
-            // encostar na parede
-            while (bc.Distance(ultraFrenteBaixo)>12) { bc.MoveFrontal(basespeed, basespeed); }
-            while (bc.Distance(ultraFrenteBaixo)<12) { bc.MoveFrontal(-basespeed, -basespeed); }
-            stop();
-
-            bc.MoveFrontalAngles(500, -90);
-
-            if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
-            abaixarGarra();
-
-            direcaoCaixa = "up right";
-            alinharNaDirecaoAtual();
-            percorrerDistancia(ladoArena+y);
-            percorrerDistancia(constante);
-            levantarGarra();
-            // encostar na caixa
-            while (bc.Distance(ultraFrenteBaixo)>2) {bc.MoveFrontal(basespeed, basespeed);}
-            stop();
-
-            soltarVitimas();
-            return;
+            bc.MoveFrontalAngles(400, 0.1f);
         }
-    }
-
-    if (direcaoSaida=="up") {
-        percorrerDistancia(ladoArena+y);
-        if (bc.Distance(ultraFrenteCima)>30) {
-            direcaoCaixa = "up left";
-            bc.PrintConsole(1, "ACHOU CAIXA: UP LEFT");
-            percorrerDistancia(constante);
-            levantarGarra();
-            while (bc.Distance(ultraFrenteBaixo)>2) {bc.MoveFrontal(basespeed, basespeed);}
-            stop();
-            soltarVitimas();
-            return;
-        } else {
-            direcaoCaixa = "down right";
-            bc.PrintConsole(1, "ACHOU CAIXA: down right");
-            
-            levantarGarra();
-            
-            // encostar na parede
-            while (bc.Distance(ultraFrenteBaixo)>2) { bc.MoveFrontal(basespeed, basespeed); }
-            stop();
-
-            alinharNaDirecaoAtual();
-            // vira em direcao a caixa
-            bc.MoveFrontalAngles(500, 135);
-
-            if (bc.Distance(ultraFrenteBaixo)<31) {evitarChoque();}
-            abaixarGarra();
-
-            // vai até ela
-            percorrerDistancia(Diagonal);
-
-            levantarGarra();
-            // encostar na caixa
-            while (bc.Distance(ultraFrenteBaixo)>2) {bc.MoveFrontal(basespeed, basespeed);}
-            stop();
-
-            soltarVitimas();
-            return;
-        }
-    }
-    
-    
-
-    if (direcaoSaida=="right") {
-        percorrerDistancia(ladoArena+y);
-
-        if (bc.Distance(ultraFrenteCima)>30) {
-            direcaoCaixa = "up left";
-            bc.PrintConsole(1, "ACHOU CAIXA: up left");
-            percorrerDistancia(constante);
-            levantarGarra();
-            while (bc.Distance(ultraFrenteBaixo)>2) {bc.MoveFrontal(basespeed, basespeed);}
-            soltarVitimas();
-            return;
-        } else {
-            direcaoCaixa = "up right";
-            bc.PrintConsole(1, "ACHOU CAIXA: up right");
-
-            alinharNaDirecaoAtual();
-
-            levantarGarra();
-
-            // volta até a posicao inicial da arena
-            while (bc.Distance(ultraFrenteCima)<200) { bc.MoveFrontal(-basespeed, -basespeed); }
-            stop();
-
-            alinharNaDirecaoAtual();
-            bc.MoveFrontalAngles(500, 45);
-            if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
-
-            abaixarGarra();
-
-            // vai até a caixa limpando a diagonal
-            percorrerDistancia(Diagonal);
-
-            levantarGarra();
-
-            // encosta na caixa
-            while (bc.Distance(ultraFrenteBaixo)>2) {bc.MoveFrontal(basespeed, basespeed);}
-            
-            soltarVitimas();
-            return;
-        }
+        
+        if (Math.Truncate(bc.Compass())==coordinate) { break; }
     }
 }
+
 
 void girar90Graus(string direction="right") {
     bc.ClearConsole();
@@ -1126,4 +1115,20 @@ void girar90Graus(string direction="right") {
 
 void stop() {
     bc.MoveFrontal(0, 0);
+}
+
+void encostarNaParede() {
+    if (bc.Distance(ultraFrenteBaixo)<=31) { evitarChoque(); }
+    abaixarGarra();
+
+    while (bc.Distance(ultraFrenteCima)>29) {
+        bc.MoveFrontal(basespeed, basespeed);
+    }
+    stop();
+    levantarGarra();
+
+    while (bc.Distance(ultraFrenteBaixo)>2) {
+        bc.MoveFrontal(basespeed, basespeed);
+    }
+    stop();
 }
