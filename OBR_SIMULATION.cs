@@ -451,15 +451,6 @@ void varrerLado()
     stop();
 }
 
-void GoCaixa()
-{
-    if (bc.Distance(ultraFrenteBaixo) < 31) { evitarChoque(); }
-    abaixarGarra();
-    percorrerDistancia((float)((ladoArena / 2) * 1.2));
-    levantarGarra();
-    while (bc.Distance(ultraFrenteBaixo) >= 1) { bc.MoveFrontal(300, 300); }
-    stop();
-}
 
 void desviarVerde()
 {
@@ -762,7 +753,7 @@ void MainProcess(string mode="default")
         bc.PrintConsole(0, "esta em uma rampa a " + direcaoAtual);
         bc.MoveFrontal(basespeed, basespeed);
 
-        percorrerDistancia(12);
+        percorrerDistancia(7);
         alinharNaDirecaoAtual();
 
         //while (estaRampa && bc.Distance(ultraFrenteBaixo)>30) {
@@ -929,7 +920,7 @@ void buscarCaixa()
 
     if (direcaoSaida == "right")
     {
-        bc.MoveFrontalRotations(300, 70);
+        bc.MoveFrontalRotations(300, 68);
         stop();
         levantarGarra();
 
@@ -947,7 +938,7 @@ void buscarCaixa()
             bc.MoveFrontalAngles(1000, 5);
             goToNextDivisible(45, "right");
 
-            bc.MoveFrontalRotations(300, 14);
+            bc.MoveFrontalRotations(300, 16);
 
             bc.MoveFrontalAngles(1000, -90);
         }
@@ -985,7 +976,7 @@ void buscarCaixa()
     {
         alinharNaDirecaoAtual();
 
-        while (bc.Distance(ultraFrenteCima) > 128) { bc.MoveFrontal(basespeed, basespeed); }
+        while (bc.Distance(ultraFrenteCima) > 125) { bc.MoveFrontal(basespeed, basespeed); }
         stop();
 
         levantarGarra();
@@ -1003,7 +994,7 @@ void buscarCaixa()
             bc.MoveFrontalAngles(1000, -5);
             goToNextDivisible(45, "left");
 
-            bc.MoveFrontalRotations(300, 33);
+            bc.MoveFrontalRotations(300, 30.5f);
 
             bc.MoveFrontalAngles(1000, 90);
         }
@@ -1025,7 +1016,7 @@ void buscarCaixa()
             bc.MoveFrontalAngles(1000, -5);
             goToNextDivisible(45, "left");
 
-            bc.MoveFrontalRotations(300, 28);
+            bc.MoveFrontalRotations(300, 29);
 
             bc.MoveFrontalAngles(1000, 90);
         }
@@ -1034,7 +1025,7 @@ void buscarCaixa()
 
     if (direcaoSaida == "up")
     {
-        bc.MoveFrontalRotations(300, 70);
+        bc.MoveFrontalRotations(300, 68);
         stop();
         levantarGarra();
 
@@ -1054,7 +1045,7 @@ void buscarCaixa()
 
             bc.MoveFrontalRotations(300, 16);
 
-            bc.MoveFrontalAngles(1000, 90);
+            bc.MoveFrontalAngles(1000, -90);
         }
         else
         {
@@ -1081,7 +1072,7 @@ void buscarCaixa()
             bc.MoveFrontalAngles(1000, 5);
             goToNextDivisible(45, "right");
 
-            bc.MoveFrontalRotations(300, 28);
+            bc.MoveFrontalRotations(300, 28.5f);
 
             bc.MoveFrontalAngles(1000, -90);
         }
@@ -1176,13 +1167,17 @@ void RescueProcess()
     float ultraD;
 
     buscarCaixa();
+
     int box_coordinate = (int)Math.Truncate(bc.Compass());
     bc.PrintConsole(1, "box_coordinate=" + box_coordinate.ToString());
 
 
 
-    while (bc.Distance(ultraFrenteBaixo) > 1.5f) { bc.MoveFrontal(basespeed, basespeed); }
+    while (bc.Distance(ultraFrenteBaixo) > 1) { bc.MoveFrontal(basespeed, basespeed); }
     if (bc.HasVictim()) { soltarVitimas(); }
+    
+    stop();
+    while (true) {}
 
     // resgate iniciando
 
@@ -1269,7 +1264,7 @@ void RescueProcess()
         goToDirection(box_coordinate, descobrirDirecaoGiro(box_coordinate));
 
         // encosta na caixa
-        while (bc.Distance(ultraFrenteBaixo) > 2) { bc.MoveFrontal(basespeed, basespeed); }
+        while (bc.Distance(ultraFrenteBaixo) > 1) { bc.MoveFrontal(basespeed, basespeed); }
         stop();
 
         if (bc.HasVictim()) { soltarVitimas(); rescued_victims += 1; }
