@@ -34,6 +34,7 @@ float ladoArena = 97;
 int saidaResgate = -1;
 int update_time = 75; // taxa de atualização dos sensores (tem que ser int)
 float constante = 10;
+float rescued_victims = 0;
 
 float Diagonal = 0;
 float d = 0;
@@ -101,8 +102,9 @@ void Main()
 
     calcularErro();
     while (bc.ReturnColor(0)!="VERMELHO" && bc.ReturnColor(1)!="VERMELHO" && bc.ReturnColor(2)!="VERMELHO" && bc.ReturnColor(3)!="VERMELHO" && bc.ReturnColor(4)!="VERMELHO") {
-        MainProcess();
+        MainProcess("exit");
     }
+    stop();
 
     alinharNaDirecaoAtual();
     bc.MoveFrontalRotations(300, 5);
@@ -112,10 +114,10 @@ void Main()
     {
         bc.ClearConsole();
         bc.PrintConsole(0, "-=-=-=-=-=-=-= FIM -=-=-=-=-=-=-=");
-        bc.PrintConsole(1, "    foram resgatas x vitimas    ");
-        bc.Wait(10 * 1000);
+        //bc.PrintConsole(1, "    foram resgatas x vitimas    ");
+        bc.PrintConsole(1, "    foram resgatas " + rescued_victims.ToString() +  " vitimas    ");
+        bc.Wait(5 * 1000);
     }
-
 }
 
 void evitarChoque()
@@ -614,7 +616,7 @@ bool desviarObstaculo()
     return false;
 }
 
-void MainProcess()
+void MainProcess(string mode="default")
 {
     I = 0;
     estavaRampa = false;
@@ -649,9 +651,9 @@ void MainProcess()
         }
         else
         {
-            for (int x = 1; x <= Math.Abs(error); i++)
+            for (int x = 1; x <= Math.Abs(error); x++)
             {
-                bc.PrintConsole(1, "procurando linha");
+                bc.PrintConsole(1, "procurando linha: "+x.ToString());
                 if (error > 0)
                 {
                     bc.MoveFrontalAngles(1000, 1);
@@ -768,7 +770,7 @@ void MainProcess()
         {
             bc.Wait(update_time);
             rampaResgate = bc.Distance(ultraDireita) <= 38 || rampaResgate;
-            if (rampaResgate) { bc.PrintConsole(0, "ENTRANDO NA RAMPA DE RESGATE"); }
+            if (rampaResgate) { bc.PrintConsole(0, "ENTRANDO NA RAMPA DE RESGATE"); basespeed=200; }
 
             calcularErro();
             if (error == 0 || gap)
@@ -794,6 +796,12 @@ void MainProcess()
         stop();
         bc.ClearConsole();
         bc.PrintConsole(0, "gap identificado");
+
+        string new_status; 
+        new_status = bc.ReturnColor(0)+" "+bc.ReturnColor(1)+" "+bc.ReturnColor(2)+" "+bc.ReturnColor(3)+" "+bc.ReturnColor(4);
+        if (mode!="default" && new_status=="VERMELHO VERMELHO VERMELHO VERMELHO VERMELHO") { return; }
+
+
         int degrees_verification = 2;
         if (lastAction == "right")
         {
@@ -816,6 +824,10 @@ void MainProcess()
         {
             bc.MoveFrontalRotations(300, 1);
             calcularErro();
+
+            new_status = bc.ReturnColor(0)+" "+bc.ReturnColor(1)+" "+bc.ReturnColor(2)+" "+bc.ReturnColor(3)+" "+bc.ReturnColor(4);
+            if (mode!="default" && new_status=="VERMELHO VERMELHO VERMELHO VERMELHO VERMELHO") { return; }
+
             if (status == "1 1 1 1 1")
             {
                 bc.ClearConsole();
@@ -898,20 +910,28 @@ void MainProcess()
     }
 }
 
+string descobrirDirecaoGiro(float coordinate) {
+   float opposite_coordinate  = coordinate+180;
+   if (opposite_coordinate>=360) {
+       opposite_coordinate -= 360;
+   }
+
+   float current_coordinate = bc.Compass();
+   if (current_coordinate>opposite_coordinate) {
+       return "right";
+   }
+   return "left";
+}
+
 void buscarCaixa()
 {
     alinharNaDirecaoAtual();
-    // falta programar:
-    // direcaoSaida=="left"
-    // direcaoSaida=="up"
-
 
     if (direcaoSaida == "right")
     {
-        bc.MoveFrontalRotations(300, 72);
+        bc.MoveFrontalRotations(300, 70);
         stop();
         levantarGarra();
-
 
         bc.MoveFrontalRotations(300, 15);
         stop();
@@ -929,7 +949,7 @@ void buscarCaixa()
 
             bc.MoveFrontalRotations(300, 14);
 
-            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+            bc.MoveFrontalAngles(1000, -90);
         }
         else
         {
@@ -954,9 +974,9 @@ void buscarCaixa()
             bc.MoveFrontalAngles(1000, 5);
             goToNextDivisible(45, "right");
 
-            bc.MoveFrontalRotations(300, 28);
+            bc.MoveFrontalRotations(300, 29);
 
-            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+            bc.MoveFrontalAngles(1000, -90);
         }
         return;
     }
@@ -985,7 +1005,7 @@ void buscarCaixa()
 
             bc.MoveFrontalRotations(300, 33);
 
-            bc.MoveFrontalAngles(1000, 89); // 90 graus fica um pouquinho torto
+            bc.MoveFrontalAngles(1000, 90);
         }
         else
         {
@@ -1007,14 +1027,14 @@ void buscarCaixa()
 
             bc.MoveFrontalRotations(300, 28);
 
-            bc.MoveFrontalAngles(1000, 89); // 90 graus fica um pouquinho torto
+            bc.MoveFrontalAngles(1000, 90);
         }
         return;
     }
 
     if (direcaoSaida == "up")
     {
-        bc.MoveFrontalRotations(300, 72);
+        bc.MoveFrontalRotations(300, 70);
         stop();
         levantarGarra();
 
@@ -1034,7 +1054,7 @@ void buscarCaixa()
 
             bc.MoveFrontalRotations(300, 16);
 
-            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+            bc.MoveFrontalAngles(1000, 90);
         }
         else
         {
@@ -1063,7 +1083,7 @@ void buscarCaixa()
 
             bc.MoveFrontalRotations(300, 28);
 
-            bc.MoveFrontalAngles(1000, -89); // 90 graus fica um pouquinho torto
+            bc.MoveFrontalAngles(1000, -90);
         }
         return;
     }
@@ -1094,6 +1114,10 @@ void RescueProcess()
     anguloInicial = (int)Math.Truncate(bc.Compass());
     bc.PrintConsole(0, "anguloInicial=" + anguloInicial.ToString());
 
+    while (bc.Distance(ultraFrenteCima)>243) {
+        bc.MoveFrontal(basespeed, basespeed);
+    }
+    stop();
 
     if (bc.Distance(ultraFrenteBaixo) < 31) { evitarChoque(); }
 
@@ -1141,27 +1165,26 @@ void RescueProcess()
     ///////////////////////////////
     basespeed = 300;
     bc.ClearConsole();
-    bc.PrintConsole(0, "<color=\"red\">iniciando resgate das vitimas</color>");
+    bc.PrintConsole(0, "<color=\"blue\">iniciando resgate das vitimas</color>");
     //////// PARTE PRINCIPAL
     /////////////////////////////////////////////////////
 
     float initial_direction = (float)Math.Truncate(bc.Compass());
     bool rescued_all_victims = false;
-    float rescued_victims = 0;
     float ultraR;
     float ultraU;
     float ultraD;
 
     buscarCaixa();
+    int box_coordinate = (int)Math.Truncate(bc.Compass());
+    bc.PrintConsole(1, "box_coordinate=" + box_coordinate.ToString());
+
+
 
     while (bc.Distance(ultraFrenteBaixo) > 1.5f) { bc.MoveFrontal(basespeed, basespeed); }
     if (bc.HasVictim()) { soltarVitimas(); }
 
-    // usar aqui o método de resgate
-    // nesse caso vou usar algo parecido com a lógica da darkmode
-
-    int box_coordinate = (int)Math.Truncate(bc.Compass());
-    bc.PrintConsole(1, "box_coordinate=" + box_coordinate.ToString());
+    // resgate iniciando
 
     while (true)
     {
@@ -1181,7 +1204,8 @@ void RescueProcess()
             }
 
             // descobrir quando ele deu um giro e não achou mais nenhuma bolinha
-            if (i>=160) {
+            // 160, 
+            if (i>=175) {
                 bc.PrintConsole(2, "resgatou todas as vitimas, saindo da arena...");
                 string direcao_giro = "";
                 if (direcaoSaida=="left" && direcaoCaixa=="up_right") {
@@ -1198,12 +1222,12 @@ void RescueProcess()
                     direcao_giro = "right";
                 }
 
-
-
-
                 goToDirection(saidaResgate, direcao_giro);
                 alinharNaDirecaoAtual();
-                while (bc.Distance(ultraFrenteBaixo) > 2) { bc.MoveFrontal(basespeed, basespeed); }
+
+                while (bc.Distance(ultraFrenteCima)>31) {
+                    bc.MoveFrontal(basespeed, basespeed);
+                }
                 stop();
 
                 bc.MoveFrontalAngles(1000, 90);
@@ -1225,14 +1249,12 @@ void RescueProcess()
                 stop();
                 return;
             }
-            
-
         }
 
         abaixarGarra();
         bc.ResetTimer();
         // vai até pegar a bolinha na garra
-        while (!bc.HasVictim()) { bc.MoveFrontal(basespeed, basespeed); }
+        while (!bc.HasVictim() && bc.Distance(ultraFrenteCima)>40) { bc.MoveFrontal(basespeed, basespeed); }
         int back_time = bc.Timer();
         stop();
         levantarGarra();
@@ -1243,10 +1265,8 @@ void RescueProcess()
         stop();
 
         // gira pra caixa denovo
-        goToDirection(box_coordinate, "left");
-
-        //if (bc.Distance(ultraFrenteBaixo)<31) { evitarChoque(); }
-        //abaixarGarra();
+        //goToDirection(box_coordinate, "left");
+        goToDirection(box_coordinate, descobrirDirecaoGiro(box_coordinate));
 
         // encosta na caixa
         while (bc.Distance(ultraFrenteBaixo) > 2) { bc.MoveFrontal(basespeed, basespeed); }
