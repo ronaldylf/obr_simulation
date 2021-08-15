@@ -914,6 +914,7 @@ string descobrirDirecaoGiro(float coordinate) {
    return "left";
 }
 
+// busca e se alinhar com a caixa
 void buscarCaixa()
 {
     alinharNaDirecaoAtual();
@@ -1175,21 +1176,20 @@ void RescueProcess()
 
     while (bc.Distance(ultraFrenteBaixo) > 1) { bc.MoveFrontal(basespeed, basespeed); }
     if (bc.HasVictim()) { soltarVitimas(); }
-    
-    stop();
-    while (true) {}
 
     // resgate iniciando
+    int coeficiente = -1;
 
     while (true)
-    {
+    {   
+        coeficiente *= -1;
         bc.MoveFrontalRotations(-basespeed, 55);
         stop();
 
         for (int i = 0; i <= 225; i++)
-        {   
+        {
             // vai girando pra direita
-            bc.MoveFrontalAngles(1000, 1);
+            bc.MoveFrontalAngles(1000, coeficiente);
             // condicao: <58 ou <78 ou < 106 ou < 108
             bool achou_bolinha = bc.Distance(ultraFrenteBaixo) < 108;
             if (achou_bolinha)
