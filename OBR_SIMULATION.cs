@@ -100,6 +100,8 @@ void Main()
     stop();
     RescueProcess();
 
+    // parte pra sair da arena
+    basespeed = initialBasespeed;
     calcularErro();
     while (bc.ReturnColor(0)!="VERMELHO" && bc.ReturnColor(1)!="VERMELHO" && bc.ReturnColor(2)!="VERMELHO" && bc.ReturnColor(3)!="VERMELHO" && bc.ReturnColor(4)!="VERMELHO") {
         MainProcess("exit");
@@ -452,7 +454,7 @@ void varrerLado()
 }
 
 
-void desviarVerde()
+void desviarVerde(string mode)
 {
     bc.MoveFrontalRotations(300, (float)0.3); stop();
     calcularErro();
@@ -499,6 +501,29 @@ void desviarVerde()
     {
         bc.MoveFrontalRotations(300, rotations_green);
         stop();
+        calcularErro();
+
+        if (mode!="default") {
+            bc.ClearConsole();
+            bc.MoveFrontalRotations(-300, 0.9f);
+            stop();
+            bc.Wait(update_time);
+            calcularErro();
+            
+            if (temVerde) {
+                bc.PrintConsole(1, "caso do verde+cruzamento na saida");
+                alinharNaDirecaoAtual();
+                bc.MoveFrontalRotations(300, 15-rotations_green);
+                stop();
+                bc.MoveFrontalAngles(1000, coeficiente*90);
+                stop();
+                return;
+            } else {
+                bc.MoveFrontalRotations(300, 0.8f);
+                stop();
+            }
+        }
+
         calcularErro();
         if (!gap)
         {
@@ -671,7 +696,7 @@ void MainProcess(string mode="default")
     { // SE TIVER VERDE
         bc.ClearConsole();
         bc.PrintConsole(0, "CAIU NO IF DO VERDE");
-        desviarVerde();
+        desviarVerde(mode);
         return;
     }
 
@@ -810,6 +835,7 @@ void MainProcess(string mode="default")
             return;
         }
 
+        
         int gap_size = 14; // 14 ou 15
         for (i = 1; i <= gap_size; i++)
         {
@@ -1200,7 +1226,7 @@ void RescueProcess()
 
             // descobrir quando ele deu um giro e não achou mais nenhuma bolinha
             // 160, 
-            if (i>=175) {
+            if (i>=170) {
                 bc.PrintConsole(2, "resgatou todas as vitimas, saindo da arena...");
                 string direcao_giro = "";
                 if (direcaoSaida=="left" && direcaoCaixa=="up_right") {
@@ -1234,6 +1260,14 @@ void RescueProcess()
                 bc.MoveFrontalAngles(1000, -90);
                 alinharNaDirecaoAtual();
 
+                calcularErro();
+                while (temVerde) {
+                    bc.MoveFrontal(basespeed, basespeed);
+                    calcularErro();
+                }
+                stop();
+
+                basespeed = initialBasespeed;
                 calcularErro();
                 while (gap) {
                     bc.MoveFrontal(basespeed, basespeed);
