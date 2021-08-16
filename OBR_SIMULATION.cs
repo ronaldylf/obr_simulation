@@ -73,7 +73,6 @@ void Main()
     initialBasespeed = basespeed;
     bc.SetPrecision(2);
     r = (float)39.68;
-    comprimentoDoCarro = (r / 2);
     ladoArena = ladoArena + comprimentoDoCarro;
 
     bc.ActuatorSpeed(150);
@@ -101,6 +100,7 @@ void Main()
     RescueProcess();
 
     // parte pra sair da arena
+    initialBasespeed = 100;
     basespeed = initialBasespeed;
     calcularErro();
     while (bc.ReturnColor(0)!="VERMELHO" && bc.ReturnColor(1)!="VERMELHO" && bc.ReturnColor(2)!="VERMELHO" && bc.ReturnColor(3)!="VERMELHO" && bc.ReturnColor(4)!="VERMELHO") {
@@ -503,7 +503,8 @@ void desviarVerde(string mode)
         stop();
         calcularErro();
 
-        if (mode!="default") {
+        if (mode!="default" && r==0) {
+            r += 1;
             bc.ClearConsole();
             bc.MoveFrontalRotations(-300, 0.9f);
             stop();
@@ -1174,10 +1175,6 @@ void RescueProcess()
 
     abaixarGarra();
 
-    // diagonal da arena
-    Diagonal = (float)(ladoArena * (Math.Pow(2, 1 / 2)) * 1.2); // * 1.2 pra ter mais precisão 
-    y = ladoArena / 3; //nao pode apagar
-
     stop();
 
     ///////////////////////////////
@@ -1246,11 +1243,6 @@ void RescueProcess()
                 goToDirection(saidaResgate, direcao_giro);
                 alinharNaDirecaoAtual();
 
-                while (bc.Distance(ultraFrenteCima)>31) {
-                    bc.MoveFrontal(basespeed, basespeed);
-                }
-                stop();
-
                 bc.MoveFrontalAngles(1000, 90);
                 alinharNaDirecaoAtual();
 
@@ -1260,21 +1252,13 @@ void RescueProcess()
                 bc.MoveFrontalAngles(1000, -90);
                 alinharNaDirecaoAtual();
 
-                calcularErro();
-                while (temVerde) {
-                    bc.MoveFrontal(basespeed, basespeed);
-                    calcularErro();
-                }
-                stop();
-
                 basespeed = initialBasespeed;
                 calcularErro();
                 while (gap) {
                     bc.MoveFrontal(basespeed, basespeed);
                     calcularErro();
                 }
-                stop();
-                bc.MoveFrontalRotations(300, 4);
+                bc.MoveFrontalRotations(300, 3);
                 stop();
                 return;
             }
